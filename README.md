@@ -302,11 +302,6 @@ Issues and pull requests are welcome.
 4. Push the branch: `git push origin feature/my-feature`
 5. Open a pull request
 
-## 🙏 Credits and license
-
-This project was originally created by Alok Kumar ([@alk231](https://github.com/alk231)) and is released under the MIT License. It is maintained here by [@aditya86-id](https://github.com/aditya86-id).
-
-Built with [LangGraph](https://github.com/langchain-ai/langgraph), [Groq](https://groq.com/), [FastAPI](https://fastapi.tiangolo.com/), [Pollinations AI](https://pollinations.ai/) and the [Blogger API](https://developers.google.com/blogger).
 
 ---
 
