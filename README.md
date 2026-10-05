@@ -1,493 +1,313 @@
 # 🤖 AI Blogger Automation System
 
-An intelligent AI-powered blog automation system that generates, refines, and publishes high-quality blog posts directly to Blogger. Built with LangGraph, FastAPI, and React, this system features an AI agent that can manage your entire blogging workflow with human-in-the-loop approval.
+An AI-powered blogging assistant. Give it a topic, review and refine the generated draft, then publish straight to Blogger. A built-in agent also lets you list, update and delete posts using plain English.
 
-## ✨ Key Features
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C)
+![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
+![Groq](https://img.shields.io/badge/Groq-F55036)
 
-### 📝 Content Generation
-- AI-powered blog post generation using Groq LLMs
-- Intelligent topic expansion and content structuring
-- Markdown-to-HTML conversion with proper formatting
-- Automatic image generation using Pollinations AI
+## Contents
 
-### 🔄 Iterative Refinement
-- Human feedback loop for content improvement
-- Real-time draft preview
-- Multiple refinement iterations
-- Context-aware content updates
+- [Features](#-features)
+- [How it works](#-how-it-works)
+- [Screenshots](#-screenshots)
+- [Tech stack](#-tech-stack)
+- [Getting started](#-getting-started)
+- [Blogger and Google setup](#-blogger-and-google-setup)
+- [API reference](#-api-reference)
+- [Configuration](#-configuration)
+- [Known limitations](#-known-limitations)
+- [Troubleshooting](#-troubleshooting)
+- [Roadmap](#-roadmap)
+- [Project structure](#-project-structure)
+- [Contributing](#-contributing)
+- [Credits and license](#-credits-and-license)
 
-### 🚀 Automated Publishing
-- Direct integration with Blogger API via MCP Server
-- One-click publish to Blogger platform
-- Automatic title optimization
-- Featured image embedding
+## ✨ Features
 
-### 🤖 AI Agent Capabilities
-- Natural language blog management commands
-- List, create, update, and delete posts via conversation
-- Smart post identification (newest, by ID, by title)
-- Human approval for critical actions (delete, update, publish)
-- Context-aware decision making
+**Draft generation**
+- Generates structured Markdown blog posts from a topic using Groq-hosted LLMs
+- Optional featured image generated through Pollinations AI
+- Markdown is converted to clean HTML before publishing
 
-## 🏛️ Architecture
+**Review and refinement**
+- Preview the draft, give feedback, and regenerate as many times as you like
+- The refine step receives the original topic, the previous draft and your feedback
 
-### Tech Stack
+**Publishing**
+- Publishes to Blogger through a Blogger MCP server
+- Generates a clean, readable title from your topic
 
-**Backend:**
-- **Framework:** FastAPI (Python)
-- **AI/LLM:** LangGraph + ChatGroq (GPT-oss-20b)
-- **MCP Integration:** Blogger MCP Server (Node.js)
-- **State Management:** LangGraph StateGraph
-- **Image Generation:** Pollinations AI
+**Blog management agent**
+- Natural-language commands: list, create, update and delete posts
+- Picks posts by recency or ID and lists posts before destructive actions
+- Built on a LangGraph state machine with an approval step for critical actions (see [Known limitations](#-known-limitations))
 
-**Frontend:**
-- **Framework:** React 19 + Vite
-- **Styling:** Tailwind CSS v4
-- **Icons:** Lucide React
-- **Build Tool:** Vite 7
+## 🔄 How it works
 
-### System Flow
-
-```
-User Input (Topic)
-    ↓
-AI Content Generator (LLM)
-    ↓
-Draft Preview (Markdown)
-    ↓
-User Review & Feedback
-    ↓
-Refinement Loop (Optional)
-    ↓
-Approval & Publish
-    ↓
-AI Agent (Human-in-loop)
-    ↓
-Blogger API (MCP Server)
-    ↓
-Published Blog Post
+```mermaid
+flowchart TD
+    A[Topic] --> B[POST /generate]
+    B --> C[Markdown draft]
+    C --> D{Happy with it?}
+    D -- No, add feedback --> E[POST /refine]
+    E --> C
+    D -- Yes --> F[POST /publish]
+    F --> G[Markdown to HTML + clean title]
+    G --> H[LangGraph agent]
+    H --> I[Blogger MCP server]
+    I --> J[Published post]
 ```
 
-## 📸 Application Screenshots
+The `/agent` endpoint feeds natural-language commands into the same LangGraph agent:
 
-### Blog Draft Generation
-![Blog Draft Interface]<img width="978" height="738" alt="Screenshot 2025-12-07 214913" src="https://github.com/user-attachments/assets/5aae9e9e-163a-4f76-a575-31d378cb45e8" />
+```mermaid
+flowchart LR
+    U[User command] --> AG[Agent node]
+    AG -->|critical action| AP[Approval node]
+    AG -->|read-only tool| T[Tool node]
+    AP --> T
+    T --> AG
+    AG -->|no tool call| E[Response]
+```
 
-*Generate AI-powered blog drafts on any topic with automatic structuring and formatting*
+## 📸 Screenshots
 
-### Review & Refinement Workflow
-![Review Interface]
-*Review drafts, provide feedback, and refine content iteratively before publishing*
+### Draft generation
+<img width="978" height="738" alt="Blog draft generation interface" src="https://github.com/user-attachments/assets/5aae9e9e-163a-4f76-a575-31d378cb45e8" />
 
-### Published Blog Management
-![Published Blogs]<img width="716" height="718" alt="Screenshot 2025-12-07 221747" src="https://github.com/user-attachments/assets/14312ecd-f92f-4859-8a70-67c1a97d173f" />
+### Published post management
+<img width="716" height="718" alt="Published blog management interface" src="https://github.com/user-attachments/assets/14312ecd-f92f-4859-8a70-67c1a97d173f" />
 
-*View and manage all published posts with AI agent commands*
+## 🧰 Tech stack
 
-## 🛠️ Installation & Setup
+| Layer | Technology |
+|-------|------------|
+| Backend | FastAPI (Python) |
+| Agent orchestration | LangGraph |
+| LLM | Groq via `langchain-groq` (`openai/gpt-oss-20b`) |
+| Blogger integration | Blogger MCP server (Node.js, stdio) via `langchain-mcp-adapters` |
+| Images | Pollinations AI |
+| Frontend | React 19, Vite 7, Tailwind CSS v4, Lucide icons |
+
+## 🚀 Getting started
 
 ### Prerequisites
 
-- Python 3.8+
-- Node.js 16+
-- Google Blogger Account
-- Google Cloud Project with Blogger API enabled
-- Groq API Key
+- Python 3.10+
+- Node.js 18+
+- A Google account with a Blogger blog
+- A Google Cloud project with the Blogger API enabled ([setup below](#-blogger-and-google-setup))
+- A [Groq API key](https://console.groq.com/)
+- A Blogger MCP server built locally (Node.js, stdio transport)
 
-### 1. Clone Repository
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/alk231/AI-Blogger-Automation-System-.git
+git clone https://github.com/aditya86-id/AI-Blogger-Automation-System-.git
 cd AI-Blogger-Automation-System-/blogAgent
 ```
 
-### 2. Backend Setup
-
-#### Install Dependencies
+### 2. Backend
 
 ```bash
 cd Backend
-pip install -r requirements.txt
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install fastapi "uvicorn[standard]" python-dotenv langchain-groq langgraph langchain-mcp-adapters markdown
 ```
 
-Create a `requirements.txt` with:
-```txt
-fastapi
-uvicorn[standard]
-python-dotenv
-langchain-groq
-langgraph
-langchain-mcp-adapters
-markdown
-```
-
-#### Configure Environment Variables
-
-Create `.env` file in `Backend/` directory:
+Create `Backend/.env`:
 
 ```env
-# Blogger Configuration
 BLOG_ID=your_blogger_blog_id
-
-# Google OAuth Credentials
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-# Groq API Key
 GROQ_API_KEY=your_groq_api_key
 ```
 
-#### Setup Blogger MCP Server
+Point the app at your Blogger MCP server by editing the `servers` dictionary in `init_workflow()` inside `app.py`:
 
-1. Install the Blogger MCP Server:
-```bash
-npm install -g @your-org/blogger-mcp-server
-```
-
-2. Update the MCP server path in `app.py` (line 99):
 ```python
 "command": "node",
-"args": ["path/to/blogger-mcp-server/dist/index.js"],
+"args": ["/absolute/path/to/blogger-mcp-server/dist/index.js"],
 ```
 
-#### Run Backend
+Start the API:
 
 ```bash
-python app.py
-# or
-uvicorn app:app --reload
+uvicorn app:app --reload --port 8000
 ```
 
-Backend runs on `http://localhost:8000`
+The API runs at `http://localhost:8000`. Check `GET /health` to confirm it is up.
 
-### 3. Frontend Setup
-
-#### Install Dependencies
+### 3. Frontend
 
 ```bash
 cd ../Frontend
 npm install
 ```
 
-#### Configure API Endpoint
-
-Create `.env` file in `Frontend/` directory:
+Create `Frontend/.env`:
 
 ```env
 VITE_API_URL=http://localhost:8000
 ```
 
-#### Run Frontend
-
 ```bash
 npm run dev
 ```
 
-Frontend runs on `http://localhost:5173`
+The app runs at `http://localhost:5173`.
 
-## 📚 API Documentation
+## 🔐 Blogger and Google setup
 
-### Content Generation Endpoints
+<details>
+<summary>Step-by-step instructions</summary>
 
-#### Generate Blog Draft
+1. **Create a project.** In the [Google Cloud Console](https://console.cloud.google.com/), create a project and enable the **Blogger API v3**.
+2. **Configure the OAuth consent screen.** Under *APIs & Services > OAuth consent screen*, choose **External** and add these scopes:
+   - `https://www.googleapis.com/auth/blogger`
+   - `https://www.googleapis.com/auth/blogger.readonly`
+3. **Create credentials.** Under *APIs & Services > Credentials*, create an **OAuth 2.0 Client ID** of type **Web application** with this authorized redirect URI:
+   - `http://localhost:3000/oauth/callback`
+4. **Save the client ID and secret** in `Backend/.env`.
+5. **Find your Blog ID.** In the Blogger dashboard, open your blog and copy the numeric ID from the URL (or the settings page) into `BLOG_ID`.
+
+</details>
+
+## 📚 API reference
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `POST` | `/generate` | Create a Markdown draft from a topic |
+| `POST` | `/refine` | Revise a draft using feedback |
+| `POST` | `/publish` | Convert a draft to HTML and publish it to Blogger |
+| `POST` | `/agent` | Run a natural-language blog management command |
+| `GET` | `/health` | Health check |
+| `GET` | `/` | Service status |
+
+**Generate a draft**
+
 ```http
 POST /generate
 Content-Type: application/json
 
-{
-  "topic": "Your blog topic",
-  "include_image": false
-}
+{ "topic": "Why Rust is great for CLI tools", "include_image": false }
 ```
 
-**Response:**
 ```json
-{
-  "draft": "Markdown content...",
-  "evaluation": "Draft generated successfully."
-}
+{ "draft": "# Markdown content...", "evaluation": "Draft generated successfully. Ready for your review." }
 ```
 
-#### Refine Blog Draft
+**Refine a draft**
+
 ```http
 POST /refine
 Content-Type: application/json
 
 {
-  "original_topic": "Original topic",
-  "feedback": "Your improvement suggestions",
-  "previous_draft": "Previous markdown content",
+  "original_topic": "Why Rust is great for CLI tools",
+  "feedback": "Add a short code example",
+  "previous_draft": "# Previous Markdown...",
   "include_image": false
 }
 ```
 
-#### Publish Blog Post
+**Publish**
+
 ```http
 POST /publish
 Content-Type: application/json
 
-{
-  "title": "Blog title",
-  "content": "Markdown content",
-  "include_image": true
-}
+{ "title": "Why Rust is great for CLI tools", "content": "# Markdown...", "include_image": true }
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "result": {
-    "title": "Optimized Title",
-    "postId": "AUTO_GENERATED",
-    "url": "https://yourblog.blogspot.com/..."
-  }
-}
-```
+**Agent command**
 
-### AI Agent Endpoint
-
-#### Natural Language Blog Management
 ```http
 POST /agent
 Content-Type: application/json
 
-{
-  "message": "Delete my 3 most recent posts"
-}
+{ "message": "List my 5 most recent posts" }
 ```
 
-**Supported Commands:**
-- "List all my blog posts"
-- "Delete the most recent post"
-- "Update the latest post with more examples"
-- "Show posts from last week"
+Example commands: "List all my blog posts", "Delete the most recent post", "Update the latest post with more examples".
 
-## 🧠 AI Agent Intelligence
+## 🔧 Configuration
 
-### Decision-Making Logic
+| Setting | Where | Notes |
+|---------|-------|-------|
+| LLM model and temperature | `ChatGroq(...)` calls in `app.py` | Any Groq model that supports tool calling works for the agent |
+| Critical actions | `CRITICAL_ACTIONS` in `app.py` | Tool names that route through the approval node |
+| Image size and model | `generate_image()` in `app.py` | Query parameters on the Pollinations URL |
+| Markdown extensions | `markdown.markdown(...)` in `/publish` | Currently `extra` and `sane_lists` |
+| Target blog | `BLOG_ID` in `.env` | Change it to manage a different blog |
 
-The AI agent follows intelligent rules:
+## ⚠️ Known limitations
 
-1. **Content vs Management**: Distinguishes between content writing requests and blog management commands
-2. **Safety First**: Always lists posts before deletion to avoid mistakes
-3. **Smart Identification**: Finds posts by newest, ID, or title match
-4. **Human Approval**: Requires confirmation for critical actions
-5. **Context Preservation**: Maintains formatting when updating posts
+This project is a working prototype. Please read these before deploying it anywhere public:
 
-### Agent Workflow
+- **Approval is not enforced yet.** The agent's approval node currently auto-approves critical actions. The draft review in the UI is the only real confirmation step before publishing.
+- **No authentication.** The API has no auth and allows all CORS origins. Run it locally or behind your own auth layer, and do not expose `/agent` publicly.
+- **Publish response is a placeholder.** `/publish` returns a fixed `postId` and blog URL rather than the real values from Blogger.
+- **Local MCP path.** The Blogger MCP server is launched as a local subprocess, so the app is not deployable to serverless hosts as-is.
+- **Draft HTML is not sanitized.** Markdown is converted to HTML as-is before publishing.
 
-```python
-User Command → Agent Analysis → Action Detection
-                                      ↓
-                              Critical Action?
-                                      ↓
-                        Yes → Human Approval → Execute
-                         No → Direct Execute
-```
+Fixes for these are tracked in the [roadmap](#-roadmap).
 
-## 📑 Project Structure
+## 🐛 Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| MCP server not found / startup fails | Check the path in `init_workflow()` in `app.py` and that the server is built (`dist/index.js` exists) |
+| Blogger API quota exceeded | Check quotas in the Google Cloud Console |
+| Authentication failed | Recreate the OAuth credentials and update `.env`; confirm the redirect URI matches |
+| Groq errors or empty output | Verify `GROQ_API_KEY` and that the model name is still available on Groq |
+| Image not loading | Pollinations may be rate limiting; retry or swap the image provider |
+
+## 🗺️ Roadmap
+
+- [ ] Real human-in-the-loop approval (LangGraph `interrupt`) for delete, update and publish
+- [ ] API authentication and restricted CORS
+- [ ] Publish through the MCP tool directly and return the real post ID and URL
+- [ ] HTML sanitization for generated content
+- [ ] Hosted or HTTP-transport MCP server for deployment
+- [ ] Scheduled publishing
+- [ ] SEO scoring and title A/B suggestions
+- [ ] Multi-platform publishing (WordPress, Medium, Dev.to)
+- [ ] Draft versioning
+
+## 📑 Project structure
 
 ```
 AI-Blogger-Automation-System-/
 ├── blogAgent/
 │   ├── Backend/
-│   │   ├── app.py              # FastAPI main application
-│   │   └── .env                # Environment variables
-│   │
-│   └── Frontend/
-│       ├── src/
-│       │   ├── App.jsx         # Main React component
-│       │   └── components/     # UI components
-│       ├── public/
-│       ├── package.json
-│       └── vite.config.js
-│
-├── docs/
-│   └── images/             # Screenshot documentation
+│   │   └── app.py          # FastAPI app and LangGraph agent
+│   └── Frontend/           # React + Vite UI
+├── docs/                   # Documentation assets
 └── README.md
 ```
 
-## 🔒 Google API Setup
-
-### Step 1: Create Google Cloud Project
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project
-3. Enable Blogger API v3
-
-### Step 2: Configure OAuth Consent
-
-1. Navigate to **APIs & Services** > **OAuth consent screen**
-2. Choose **External** user type
-3. Add required scopes:
-   - `https://www.googleapis.com/auth/blogger`
-   - `https://www.googleapis.com/auth/blogger.readonly`
-
-### Step 3: Create OAuth Credentials
-
-1. Go to **APIs & Services** > **Credentials**
-2. Create **OAuth 2.0 Client ID**
-3. Application type: **Web application**
-4. Authorized redirect URIs:
-   - `http://localhost:3000/oauth/callback`
-5. Copy Client ID and Client Secret to `.env`
-
-### Step 4: Get Blog ID
-
-1. Visit your Blogger dashboard
-2. Go to **Settings** > **Basic**
-3. Find **Blog ID** in the URL or settings
-4. Add to `.env` file
-
-## 🎓 Usage Guide
-
-### Generating a Blog Post
-
-1. Enter your topic in the input field
-2. Click **Generate Draft**
-3. Review the AI-generated content
-4. Optionally add feedback and click **Refine**
-5. When satisfied, click **Approve & Publish**
-
-### Using AI Agent Commands
-
-In the agent interface, try:
-
-```
-"List my recent blog posts"
-"Delete the last 2 posts"
-"Update the newest post with better examples"
-"Show me posts about AI"
-```
-
-## 🔧 Configuration Options
-
-### LLM Model Selection
-
-Change the model in `app.py`:
-
-```python
-llm = ChatGroq(
-    model="openai/gpt-oss-20b",  # or "mixtral-8x7b-32768"
-    temperature=0.7
-)
-```
-
-### Image Generation
-
-Customize image parameters:
-
-```python
-return f"https://image.pollinations.ai/prompt/{encoded}?width=1280&height=720&model=flux"
-```
-
-### Approval Requirements
-
-Modify critical actions list:
-
-```python
-CRITICAL_ACTIONS = ["delete_post", "create_post", "update_post"]
-```
-
-## 🚀 Advanced Features
-
-### Custom Markdown Extensions
-
-The system uses Python Markdown with extensions:
-- **extra**: Adds tables, footnotes, abbreviations
-- **sane_lists**: Better list handling
-
-### Image Prompt Engineering
-
-Generate better images by modifying the prompt:
-
-```python
-img_prompt = f"Professional blog header image about {title}, high quality, modern design"
-```
-
-### Multi-Blog Support
-
-Manage multiple blogs by switching `BLOG_ID` in environment variables or extending the agent logic.
-
-## 📊 Performance & Limits
-
-- **Generation Time:** 5-15 seconds per draft
-- **Refinement:** 3-10 seconds per iteration
-- **Publishing:** 2-5 seconds to Blogger
-- **Rate Limits:** Depends on Groq API tier and Blogger API quotas
-
 ## 🤝 Contributing
 
-Contributions are welcome! Areas for improvement:
-
-- Multi-language support
-- SEO optimization suggestions
-- Plagiarism detection
-- Scheduled publishing
-- Analytics integration
-- WordPress/Medium support
-
-### Development Workflow
+Issues and pull requests are welcome.
 
 1. Fork the repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
+2. Create a branch: `git checkout -b feature/my-feature`
+3. Commit your changes: `git commit -m "Add my feature"`
+4. Push the branch: `git push origin feature/my-feature`
+5. Open a pull request
 
-## 🐛 Troubleshooting
+## 🙏 Credits and license
 
-### Common Issues
+This project was originally created by Alok Kumar ([@alk231](https://github.com/alk231)) and is released under the MIT License. It is maintained here by [@aditya86-id](https://github.com/aditya86-id).
 
-**Issue:** "MCP Server not found"
-- Solution: Update MCP server path in `app.py` line 99
-
-**Issue:** "Blogger API quota exceeded"
-- Solution: Check Google Cloud Console quotas and enable billing
-
-**Issue:** "Authentication failed"
-- Solution: Regenerate OAuth credentials and update `.env`
-
-**Issue:** "Image not loading"
-- Solution: Check Pollinations API status or use alternative image service
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👨‍💻 Author
-
-**Alok Kumar**
-
-- GitHub: [@alk231](https://github.com/alk231)
-- Project Link: [AI-Blogger-Automation-System](https://github.com/alk231/AI-Blogger-Automation-System-)
-
-## 🙏 Acknowledgments
-
-- [LangGraph](https://github.com/langchain-ai/langgraph) for agent orchestration
-- [Groq](https://groq.com/) for fast LLM inference
-- [Pollinations AI](https://pollinations.ai/) for image generation
-- [Blogger API](https://developers.google.com/blogger) for content publishing
-- [FastAPI](https://fastapi.tiangolo.com/) for backend framework
-
-## 💡 Future Enhancements
-
-- [ ] Multi-platform publishing (WordPress, Medium, Dev.to)
-- [ ] Scheduled post publishing
-- [ ] SEO score analysis
-- [ ] Content plagiarism checker
-- [ ] Analytics dashboard
-- [ ] Voice-to-blog conversion
-- [ ] Multi-language content generation
-- [ ] A/B testing for titles
-- [ ] Social media auto-posting
-- [ ] Draft versioning system
+Built with [LangGraph](https://github.com/langchain-ai/langgraph), [Groq](https://groq.com/), [FastAPI](https://fastapi.tiangolo.com/), [Pollinations AI](https://pollinations.ai/) and the [Blogger API](https://developers.google.com/blogger).
 
 ---
 
-⭐ **Star this repository if you find it useful!**
-
-🐛 **Found a bug? Open an issue!**
-
-💡 **Have suggestions? Start a discussion!**
+⭐ If you find this useful, consider starring the repo. Found a bug or have an idea? Open an issue.
